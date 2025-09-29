@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Daten Upload - Zahngut App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .step-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 2px solid #e2e8f0;
+            position: relative;
+        }
+        
+        .step-card.active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102,126,234,0.05) 0%, rgba(118,75,162,0.05) 100%);
+        }
+        
+        .step-card.success {
+            border-color: #10b981;
+            background: #d1fae5;
+        }
+        
+        .step-card.error {
+            border-color: #ef4444;
+            background: #fee2e2;
+        }
+        
+        .step-number {
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        h2 {
+            color: #1a1a1a;
+            margin-bottom: 15px;
+            padding-left: 20px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102,126,234,0.4);
+        }
+        
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #1a1a1a;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+        
+        .status-message {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            display: none;
+        }
+        
+        .status-message.show {
+            display: block;
+        }
+        
+        .status-message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        
+        .status-message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        
+        .status-message.info {
+            background: #dbeafe;
+            color: #1e3a8a;
+            border: 1px solid #3b82f6;
+        }
+        
+        .progress-bar {
+            background: #e2e8f0;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .data-preview {
+            background: #1a1a1a;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+        
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid white;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+        }
+        
+        .check-item .icon {
+            font-size: 20px;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .file-upload-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .file-upload-btn:hover {
+            background: #cbd5e1;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        
+        .tab-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Firebase Daten Upload</h1>
+            <p>Laden Sie Ihre Zahngut-Daten in die Cloud</p>
+        </div>
+        
+        <div class="content">
+            <!-- Login Status -->
+            <div class="step-card" id="loginCard">
+                <div class="step-number">1</div>
+                <h2>Anmeldung</h2>
+                <div id="loginStatus">
+                    <p>Überprüfe Anmeldestatus...</p>
+                </div>
+                <div class="button-group" id="loginButtons" style="display: none;">
+                    <button class="btn-primary" onclick="doLogin()">🔐 Als Admin anmelden</button>
+                </div>
+            </div>
+            
+            <!-- Datenquelle wählen -->
+            <div class="step-card" id="sourceCard" style="display: none;">
+                <div class="step-number">2</div>
+                <h2>Datenquelle wählen</h2>
+                
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="switchTab('localStorage')">💾 LocalStorage</button>
+                    <button class="tab-btn" onclick="switchTab('standard')">📦 Standard-Daten</button>
+                    <button class="tab-btn" onclick="switchTab('upload')">📤 JSON hochladen</button>
+                </div>
+                
+                <!-- LocalStorage Tab -->
+                <div class="tab-content active" id="localStorageTab">
+                    <div class="status-message info show">
+                        <p><strong>💾 LocalStorage Daten gefunden!</strong></p>
+                        <p id="localDataInfo">Analysiere...</p>
+                    </div>
+                    <div class="data-preview" id="localDataPreview"></div>
+                    <button class="btn-primary" onclick="uploadLocalStorage()">
+                        <span id="localBtn">LocalStorage zu Firebase hochladen</span>
+                    </button>
+                </div>
+                
+                <!-- Standard-Daten Tab -->
+                <div class="tab-content" id="standardTab">
+                    <div class="status-message info show">
+                        <p><strong>📦 Standard-Daten verfügbar</strong></p>
+                        <p>Lädt Beispiel-Behandlungen, Videos und Nachsorge-Tipps</p>
+                    </div>
+                    <button class="btn-success" onclick="uploadStandardData()">
+                        <span id="standardBtn">Standard-Daten laden</span>
+                    </button>
+                </div>
+                
+                <!-- Upload Tab -->
+                <div class="tab-content" id="uploadTab">
+                    <div class="status-message info show">
+                        <p><strong>📤 JSON-Datei hochladen</strong></p>
+                        <p>Laden Sie eine zuvor exportierte Backup-Datei hoch</p>
+                    </div>
+                    <input type="file" id="jsonFile" accept=".json" onchange="handleFileUpload(event)">
+                    <label for="jsonFile" class="file-upload-btn">
+                        📁 JSON-Datei auswählen
+                    </label>
+                    <div id="fileInfo" style="margin-top: 15px;"></div>
+                    <button class="btn-warning" onclick="uploadJsonFile()" id="uploadJsonBtn" style="display: none;">
+                        <span id="jsonBtn">JSON zu Firebase hochladen</span>
+                    </button>
+                </div>
+                
+                <div class="progress-bar" id="progressBar" style="display: none;">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+            
+            <!-- Upload-Ergebnis -->
+            <div class="step-card" id="resultCard" style="display: none;">
+                <div class="step-number">3</div>
+                <h2>Upload-Ergebnis</h2>
+                <div id="uploadResult"></div>
+                <div class="button-group">
+                    <button class="btn-success" onclick="window.open('admin-firebase.html', '_blank')">
+                        🎯 Admin Panel öffnen
+                    </button>
+                    <button class="btn-primary" onclick="window.open('index.html', '_blank')">
+                        📱 App testen
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Status Messages -->
+            <div id="statusMessages"></div>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    
+    <!-- App Scripts -->
+    <script src="firebase-config.js"></script>
+    <script src="firebase-service.js"></script>
+    <script src="firebase-migration.js"></script>
+    <script src="data.js"></script>
+    
+    <script>
+        let currentUser = null;
+        let uploadedData = null;
+        
+        // Check login status
+        auth.onAuthStateChanged(async (user) => {
+            const loginCard = document.getElementById('loginCard');
+            const sourceCard = document.getElementById('sourceCard');
+            const loginStatus = document.getElementById('loginStatus');
+            const loginButtons = document.getElementById('loginButtons');
+            
+            if (user) {
+                currentUser = user;
+                loginCard.classList.add('success');
+                loginStatus.innerHTML = `
+                    <div class="check-item">
+                        <span class="icon">✅</span>
+                        <span>Angemeldet als: <strong>${user.email}</strong></span>
+                    </div>
+                `;
+                loginButtons.style.display = 'none';
+                sourceCard.style.display = 'block';
+                
+                // Check localStorage data
+                checkLocalStorage();
+                
+            } else {
+                currentUser = null;
+                loginCard.classList.remove('success');
+                loginStatus.innerHTML = `
+                    <div class="check-item">
+                        <span class="icon">🔓</span>
+                        <span>Nicht angemeldet - Bitte melden Sie sich an</span>
+                    </div>
+                `;
+                loginButtons.style.display = 'block';
+                sourceCard.style.display = 'none';
+            }
+        });
+        
+        // Login function
+        function doLogin() {
+            const email = prompt('E-Mail-Adresse:', 'admin@zahngut.de');
+            const password = prompt('Passwort:');
+            
+            if (email && password) {
+                showStatus('info', 'Anmeldung läuft...');
+                auth.signInWithEmailAndPassword(email, password)
+                    .then((result) => {
+                        showStatus('success', 'Erfolgreich angemeldet!');
+                    })
+                    .catch((error) => {
+                        showStatus('error', 'Anmeldung fehlgeschlagen: ' + error.message);
+                    });
+            }
+        }
+        
+        // Check localStorage
+        function checkLocalStorage() {
+            const localData = localStorage.getItem('zahngutAppData');
+            const info = document.getElementById('localDataInfo');
+            const preview = document.getElementById('localDataPreview');
+            
+            if (localData) {
+                try {
+                    const data = JSON.parse(localData);
+                    const stats = {
+                        treatments: data.treatments?.length || 0,
+                        videos: data.videos?.length || 0,
+                        aftercare: data.aftercare?.length || 0,
+                        hasDesign: !!data.design,
+                        hasPraxis: !!data.praxis
+                    };
+                    
+                    info.innerHTML = `
+                        <strong>Gefundene Daten:</strong><br>
+                        • ${stats.treatments} Behandlungen<br>
+                        • ${stats.videos} Videos<br>
+                        • ${stats.aftercare} Nachsorge-Tipps<br>
+                        • ${stats.hasPraxis ? '✓' : '✗'} Praxis-Info<br>
+                        • ${stats.hasDesign ? '✓' : '✗'} Design-Einstellungen
+                    `;
+                    
+                    // Show preview
+                    const previewData = {
+                        praxis: data.praxis?.name,
+                        treatments: stats.treatments,
+                        videos: stats.videos,
+                        aftercare: stats.aftercare
+                    };
+                    preview.textContent = JSON.stringify(previewData, null, 2);
+                    
+                } catch (error) {
+                    info.innerHTML = 'Fehler beim Lesen der localStorage-Daten';
+                }
+            } else {
+                info.innerHTML = 'Keine localStorage-Daten gefunden';
+                document.getElementById('localStorageTab').querySelector('button').disabled = true;
+            }
+        }
+        
+        // Tab switching
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').classList.add('active');
+        }
+        
+        // Upload localStorage
+        async function uploadLocalStorage() {
+            const btn = document.getElementById('localBtn');
+            btn.innerHTML = '<span class="spinner"></span> Lade hoch...';
+            document.querySelector('#localStorageTab button').disabled = true;
+            showProgress();
+            
+            try {
+                const result = await FirebaseMigration.migrateFromLocalStorage();
+                
+                if (result.success) {
+                    showResult('success', `
+                        <h3>✅ Upload erfolgreich!</h3>
+                        <p>Folgende Daten wurden hochgeladen:</p>
+                        <ul>
+                            <li>✓ ${result.results.treatments} Behandlungen</li>
+                            <li>✓ ${result.results.videos} Videos</li>
+                            <li>✓ ${result.results.aftercare} Nachsorge-Tipps</li>
+                            <li>✓ Praxis-Informationen</li>
+                            <li>✓ Design-Einstellungen</li>
+                        </ul>
+                    `);
+                    updateProgress(100);
+                } else {
+                    showResult('error', `<h3>❌ Fehler beim Upload</h3><p>${result.error}</p>`);
+                }
+            } catch (error) {
+                showResult('error', `<h3>❌ Fehler</h3><p>${error.message}</p>`);
+            }
+            
+            btn.innerHTML = 'LocalStorage zu Firebase hochladen';
+            document.querySelector('#localStorageTab button').disabled = false;
+        }
+        
+        // Upload standard data
+        async function uploadStandardData() {
+            const btn = document.getElementById('standardBtn');
+            btn.innerHTML = '<span class="spinner"></span> Lade hoch...';
+            document.querySelector('#standardTab button').disabled = true;
+            showProgress();
+            
+            try {
+                const result = await FirebaseMigration.loadDefaultData();
+                
+                if (result.success) {
+                    showResult('success', `
+                        <h3>✅ Standard-Daten geladen!</h3>
+                        <p>Die Beispieldaten wurden erfolgreich hochgeladen.</p>
+                    `);
+                    updateProgress(100);
+                } else {
+                    showResult('error', `<h3>❌ Fehler</h3><p>${result.error}</p>`);
+                }
+            } catch (error) {
+                showResult('error', `<h3>❌ Fehler</h3><p>${error.message}</p>`);
+            }
+            
+            btn.innerHTML = 'Standard-Daten laden';
+            document.querySelector('#standardTab button').disabled = false;
+        }
+        
+        // Handle file upload
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            const fileInfo = document.getElementById('fileInfo');
+            const uploadBtn = document.getElementById('uploadJsonBtn');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        uploadedData = JSON.parse(e.target.result);
+                        fileInfo.innerHTML = `
+                            <div class="status-message success show">
+                                <strong>📄 ${file.name}</strong><br>
+                                Größe: ${(file.size / 1024).toFixed(2)} KB<br>
+                                Gefunden: ${uploadedData.treatments?.length || 0} Behandlungen, 
+                                ${uploadedData.videos?.length || 0} Videos
+                            </div>
+                        `;
+                        uploadBtn.style.display = 'block';
+                    } catch (error) {
+                        fileInfo.innerHTML = `
+                            <div class="status-message error show">
+                                ❌ Ungültige JSON-Datei
+                            </div>
+                        `;
+                        uploadBtn.style.display = 'none';
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+        
+        // Upload JSON file
+        async function uploadJsonFile() {
+            if (!uploadedData) return;
+            
+            const btn = document.getElementById('jsonBtn');
+            btn.innerHTML = '<span class="spinner"></span> Lade hoch...';
+            document.getElementById('uploadJsonBtn').disabled = true;
+            showProgress();
+            
+            try {
+                const result = await FirebaseService.importAllData(uploadedData);
+                
+                if (result.success) {
+                    showResult('success', `
+                        <h3>✅ JSON-Daten hochgeladen!</h3>
+                        <p>Alle Daten wurden erfolgreich importiert.</p>
+                    `);
+                    updateProgress(100);
+                } else {
+                    showResult('error', `<h3>❌ Fehler</h3><p>${result.error}</p>`);
+                }
+            } catch (error) {
+                showResult('error', `<h3>❌ Fehler</h3><p>${error.message}</p>`);
+            }
+            
+            btn.innerHTML = 'JSON zu Firebase hochladen';
+            document.getElementById('uploadJsonBtn').disabled = false;
+        }
+        
+        // Helper functions
+        function showProgress() {
+            document.getElementById('progressBar').style.display = 'block';
+            updateProgress(0);
+            
+            // Simulate progress
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 10;
+                if (progress <= 90) {
+                    updateProgress(progress);
+                } else {
+                    clearInterval(interval);
+                }
+            }, 200);
+        }
+        
+        function updateProgress(percent) {
+            document.getElementById('progressFill').style.width = percent + '%';
+        }
+        
+        function showResult(type, message) {
+            const resultCard = document.getElementById('resultCard');
+            const uploadResult = document.getElementById('uploadResult');
+            
+            resultCard.style.display = 'block';
+            resultCard.classList.add(type);
+            uploadResult.innerHTML = message;
+            
+            // Scroll to result
+            resultCard.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function showStatus(type, message) {
+            const container = document.getElementById('statusMessages');
+            const id = 'status-' + Date.now();
+            
+            container.innerHTML = `
+                <div class="status-message ${type} show" id="${id}">
+                    ${message}
+                </div>
+            `;
+            
+            setTimeout(() => {
+                const msg = document.getElementById(id);
+                if (msg) msg.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

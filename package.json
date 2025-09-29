@@ -1,0 +1,84 @@
+{
+  "name": "zahngut-app",
+  "version": "1.0.0",
+  "description": "Zahngut Bad Wünnenberg - Digitale Praxis App",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server -p 8080",
+    "build": "echo 'No build needed for static site'",
+    "cap:init": "cap init",
+    "cap:add:ios": "cap add ios",
+    "cap:add:android": "cap add android",
+    "cap:sync": "cap sync",
+    "cap:copy": "cap copy",
+    "cap:open:ios": "cap open ios",
+    "cap:open:android": "cap open android",
+    "cap:run:ios": "cap run ios",
+    "cap:run:android": "cap run android",
+    "install:all": "npm install && npm run cap:init && npm run cap:add:ios && npm run cap:add:android",
+    "deploy:firebase": "firebase deploy --only hosting",
+    "test": "echo 'No tests configured'"
+  },
+  "keywords": [
+    "zahnarzt",
+    "dental",
+    "medical",
+    "pwa",
+    "app",
+    "healthcare"
+  ],
+  "author": "Zahngut Bad Wünnenberg",
+  "license": "MIT",
+  "devDependencies": {
+    "@capacitor/android": "^5.0.0",
+    "@capacitor/cli": "^5.0.0",
+    "@capacitor/core": "^5.0.0",
+    "@capacitor/ios": "^5.0.0",
+    "http-server": "^14.1.1"
+  },
+  "dependencies": {
+    "@capacitor/app": "^5.0.0",
+    "@capacitor/browser": "^5.0.0",
+    "@capacitor/device": "^5.0.0",
+    "@capacitor/network": "^5.0.0",
+    "@capacitor/push-notifications": "^5.0.0",
+    "@capacitor/splash-screen": "^5.0.0",
+    "@capacitor/status-bar": "^5.0.0",
+    "@capacitor/storage": "^1.2.5"
+  },
+  "capacitor": {
+    "appId": "de.zahngut.app",
+    "appName": "Zahngut",
+    "bundledWebRuntime": false,
+    "npmClient": "npm",
+    "webDir": ".",
+    "plugins": {
+      "SplashScreen": {
+        "launchShowDuration": 2000,
+        "launchAutoHide": true,
+        "backgroundColor": "#0891b2",
+        "androidSplashResourceName": "splash",
+        "androidScaleType": "CENTER_CROP",
+        "showSpinner": false,
+        "splashFullScreen": false,
+        "splashImmersive": false
+      },
+      "StatusBar": {
+        "style": "LIGHT",
+        "backgroundColor": "#0891b2"
+      },
+      "PushNotifications": {
+        "presentationOptions": ["badge", "sound", "alert"]
+      }
+    },
+    "ios": {
+      "contentInset": "automatic",
+      "preferredContentMode": "mobile"
+    },
+    "android": {
+      "allowMixedContent": false,
+      "captureInput": true,
+      "webContentsDebuggingEnabled": false
+    }
+  }
+}

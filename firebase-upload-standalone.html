@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Upload - All-in-One</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #1a1a1a;
+            text-align: center;
+        }
+        
+        .status-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+        
+        .success {
+            background: #d1fae5;
+            border-left-color: #10b981;
+        }
+        
+        .error {
+            background: #fee2e2;
+            border-left-color: #ef4444;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            margin: 5px 0;
+            font-size: 16px;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        label {
+            display: block;
+            margin-top: 15px;
+            color: #4a5568;
+            font-weight: 600;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid white;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Firebase Daten Upload</h1>
+        
+        <!-- Status -->
+        <div id="statusBox" class="status-box">
+            <p id="statusText">📡 Verbinde mit Firebase...</p>
+        </div>
+        
+        <!-- Login Form -->
+        <div id="loginSection">
+            <h2>Schritt 1: Anmelden</h2>
+            <label>E-Mail:</label>
+            <input type="email" id="email" value="admin@zahngut.de">
+            <label>Passwort:</label>
+            <input type="password" id="password" placeholder="Ihr Passwort">
+            <button onclick="doLogin()">🔐 Anmelden</button>
+        </div>
+        
+        <!-- Upload Section -->
+        <div id="uploadSection" class="hidden">
+            <h2>Schritt 2: Daten hochladen</h2>
+            
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="selectTab('default')">📦 Standard</button>
+                <button class="tab-btn" onclick="selectTab('localStorage')">💾 LocalStorage</button>
+            </div>
+            
+            <div id="defaultTab">
+                <p>Lädt Beispiel-Behandlungen und Videos</p>
+                <button onclick="uploadDefaultData()">Standard-Daten hochladen</button>
+            </div>
+            
+            <div id="localStorageTab" class="hidden">
+                <p id="localStorageInfo">Prüfe LocalStorage...</p>
+                <button onclick="uploadLocalStorage()" id="localStorageBtn">LocalStorage hochladen</button>
+            </div>
+        </div>
+        
+        <!-- Success Section -->
+        <div id="successSection" class="hidden">
+            <div class="status-box success">
+                <h3>✅ Upload erfolgreich!</h3>
+                <p id="uploadResult"></p>
+            </div>
+            <button onclick="window.open('admin-firebase.html', '_blank')">Admin Panel öffnen</button>
+            <button onclick="window.open('index.html', '_blank')">App testen</button>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    
+    <script>
+        // ============= FIREBASE CONFIG (IHRE ECHTEN DATEN!) =============
+        const firebaseConfig = {
+            apiKey: "AIzaSyA0LQpDc2EGE8Xr7gGaC7vnUHmkXT1BMkg",
+            authDomain: "zahngut-app-v2.firebaseapp.com",
+            projectId: "zahngut-app-v2",
+            storageBucket: "zahngut-app-v2.firebasestorage.app",
+            messagingSenderId: "973913290067",
+            appId: "1:973913290067:web:b83259587873f8fae7dda6"
+        };
+        
+        // Firebase initialisieren
+        let app, auth, db, storage;
+        
+        try {
+            app = firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            db = firebase.firestore();
+            storage = firebase.storage();
+            
+            document.getElementById('statusText').innerHTML = '✅ Firebase verbunden! Projekt: zahngut-app-v2';
+            console.log('Firebase initialized successfully');
+        } catch (error) {
+            document.getElementById('statusBox').className = 'status-box error';
+            document.getElementById('statusText').innerHTML = '❌ Firebase-Fehler: ' + error.message;
+            console.error('Firebase init error:', error);
+        }
+        
+        // ============= DEFAULT DATA =============
+        const defaultData = {
+            praxis: {
+                name: "Zahngut Bad Wünnenberg",
+                slogan: "Moderne Zahnmedizin. Der Mensch im Mittelpunkt.",
+                telefon: "02957/1010",
+                notdienst: "01805/986700",
+                email: "info@dein-zahngut.de",
+                doctolib: "https://www.doctolib.de/zahnarztpraxis/bad-wuennenberg/zahngut-bad-wuennenberg",
+                address: {
+                    street: "Hauptstraße 1",
+                    zip: "33181",
+                    city: "Bad Wünnenberg"
+                }
+            },
+            oeffnungszeiten: {
+                montag: {von: "08:00", bis: "19:00"},
+                dienstag: {von: "08:00", bis: "19:00"},
+                mittwoch: {von: "08:00", bis: "19:00"},
+                donnerstag: {von: "08:00", bis: "19:00"},
+                freitag: {von: "08:00", bis: "16:00"},
+                samstag: {von: "", bis: ""},
+                sonntag: {von: "", bis: ""}
+            },
+            treatments: [
+                {
+                    id: "prophylaxe",
+                    category: "zahnerhaltung",
+                    name: "Prophylaxe",
+                    icon: "🦷",
+                    iconType: "emoji",
+                    untertitel: "Professionelle Zahnreinigung",
+                    was: "Die professionelle Zahnreinigung (PZR) ist eine intensive Reinigung der Zähne.",
+                    ablauf: ["Untersuchung", "Zahnstein entfernen", "Polieren", "Fluoridierung"],
+                    vorteile: ["Kariesvorbeugung", "Frischer Atem", "Hellere Zähne"],
+                    dauer: "45-60 Min",
+                    empfohlen: "2x jährlich",
+                    active: true
+                },
+                {
+                    id: "fuellungen",
+                    category: "zahnerhaltung",
+                    name: "Füllungen",
+                    icon: "🔨",
+                    iconType: "emoji",
+                    untertitel: "Moderne Füllungstherapie",
+                    was: "Hochwertige zahnfarbene Füllungen.",
+                    ablauf: ["Betäubung", "Karies entfernen", "Füllung einsetzen"],
+                    vorteile: ["Zahnfarben", "Langlebig", "Minimalinvasiv"],
+                    dauer: "30-45 Min",
+                    empfohlen: "Bei Bedarf",
+                    active: true
+                }
+            ],
+            videos: [
+                {
+                    id: 1,
+                    title: "Wurzelbehandlung erklärt",
+                    category: "allgemein",
+                    duration: "3:30",
+                    views: "1.2k",
+                    url: "https://www.youtube.com/watch?v=example",
+                    active: true
+                }
+            ],
+            aftercare: [
+                {
+                    id: 1,
+                    behandlung: "Zahnextraktion",
+                    kurzbeschreibung: "Nach dem Ziehen eines Zahnes",
+                    zeitraum: "7-10 Tage",
+                    icon: "🦷",
+                    phasen: {
+                        phase1: {
+                            title: "Erste Stunden",
+                            time: "0-2h",
+                            items: ["30 Min auf Tupfer beißen", "Nicht spülen", "Kühlen"]
+                        },
+                        phase2: {
+                            title: "Tag 1-3",
+                            time: "Tag 1-3",
+                            items: ["Weiche Kost", "Nicht rauchen", "Vorsichtig putzen"]
+                        },
+                        phase3: {
+                            title: "Heilung",
+                            time: "Tag 4-7",
+                            items: ["Normal essen", "Kontrolle wahrnehmen"]
+                        }
+                    },
+                    warnung: "Bei starken Schmerzen oder Blutungen sofort melden",
+                    active: true
+                }
+            ],
+            design: {
+                logoType: "icon",
+                logoIcon: "🦷",
+                colors: {
+                    primary: "#0891b2",
+                    accent: "#06b6d4"
+                }
+            }
+        };
+        
+        // ============= AUTH CHECK =============
+        let currentUser = null;
+        
+        auth.onAuthStateChanged((user) => {
+            currentUser = user;
+            if (user) {
+                console.log('Logged in as:', user.email);
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('uploadSection').classList.remove('hidden');
+                document.getElementById('statusBox').className = 'status-box success';
+                document.getElementById('statusText').innerHTML = '✅ Angemeldet als: ' + user.email;
+                checkLocalStorage();
+            } else {
+                console.log('Not logged in');
+                document.getElementById('loginSection').classList.remove('hidden');
+                document.getElementById('uploadSection').classList.add('hidden');
+            }
+        });
+        
+        // ============= LOGIN =============
+        async function doLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                alert('Bitte E-Mail und Passwort eingeben!');
+                return;
+            }
+            
+            try {
+                document.getElementById('statusText').innerHTML = '🔄 Anmeldung läuft...';
+                const result = await auth.signInWithEmailAndPassword(email, password);
+                console.log('Login successful:', result.user.email);
+            } catch (error) {
+                document.getElementById('statusBox').className = 'status-box error';
+                document.getElementById('statusText').innerHTML = '❌ Anmeldefehler: ' + error.message;
+                console.error('Login error:', error);
+            }
+        }
+        
+        // ============= CHECK LOCALSTORAGE =============
+        function checkLocalStorage() {
+            const data = localStorage.getItem('zahngutAppData');
+            const info = document.getElementById('localStorageInfo');
+            const btn = document.getElementById('localStorageBtn');
+            
+            if (data) {
+                try {
+                    const parsed = JSON.parse(data);
+                    info.innerHTML = `✅ LocalStorage-Daten gefunden: ${parsed.treatments?.length || 0} Behandlungen`;
+                    btn.disabled = false;
+                } catch (e) {
+                    info.innerHTML = '❌ LocalStorage-Daten beschädigt';
+                    btn.disabled = true;
+                }
+            } else {
+                info.innerHTML = '❌ Keine LocalStorage-Daten vorhanden';
+                btn.disabled = true;
+            }
+        }
+        
+        // ============= TAB SWITCHING =============
+        function selectTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (tab === 'default') {
+                document.getElementById('defaultTab').classList.remove('hidden');
+                document.getElementById('localStorageTab').classList.add('hidden');
+            } else {
+                document.getElementById('defaultTab').classList.add('hidden');
+                document.getElementById('localStorageTab').classList.remove('hidden');
+            }
+        }
+        
+        // ============= UPLOAD DEFAULT DATA =============
+        async function uploadDefaultData() {
+            if (!currentUser) {
+                alert('Bitte erst anmelden!');
+                return;
+            }
+            
+            document.getElementById('statusText').innerHTML = '🔄 Lade Standard-Daten hoch...';
+            
+            try {
+                // Upload each section
+                await db.collection('praxis_info').doc('main').set(defaultData.praxis);
+                await db.collection('opening_hours').doc('main').set(defaultData.oeffnungszeiten);
+                await db.collection('design').doc('main').set(defaultData.design);
+                
+                // Upload treatments
+                for (const treatment of defaultData.treatments) {
+                    await db.collection('treatments').add({
+                        ...treatment,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                
+                // Upload videos
+                for (const video of defaultData.videos) {
+                    await db.collection('videos').add({
+                        ...video,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                
+                // Upload aftercare
+                for (const item of defaultData.aftercare) {
+                    await db.collection('aftercare').add({
+                        ...item,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                
+                showSuccess('Standard-Daten erfolgreich hochgeladen!');
+                
+            } catch (error) {
+                document.getElementById('statusBox').className = 'status-box error';
+                document.getElementById('statusText').innerHTML = '❌ Upload-Fehler: ' + error.message;
+                console.error('Upload error:', error);
+            }
+        }
+        
+        // ============= UPLOAD LOCALSTORAGE =============
+        async function uploadLocalStorage() {
+            if (!currentUser) {
+                alert('Bitte erst anmelden!');
+                return;
+            }
+            
+            const data = localStorage.getItem('zahngutAppData');
+            if (!data) {
+                alert('Keine LocalStorage-Daten vorhanden!');
+                return;
+            }
+            
+            document.getElementById('statusText').innerHTML = '🔄 Lade LocalStorage-Daten hoch...';
+            
+            try {
+                const appData = JSON.parse(data);
+                
+                // Upload sections if they exist
+                if (appData.praxis) {
+                    await db.collection('praxis_info').doc('main').set(appData.praxis);
+                }
+                
+                if (appData.oeffnungszeiten) {
+                    await db.collection('opening_hours').doc('main').set(appData.oeffnungszeiten);
+                }
+                
+                if (appData.design) {
+                    await db.collection('design').doc('main').set(appData.design);
+                }
+                
+                // Upload treatments
+                if (appData.treatments) {
+                    for (const treatment of appData.treatments) {
+                        await db.collection('treatments').add({
+                            ...treatment,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+                }
+                
+                // Upload videos
+                if (appData.videos) {
+                    for (const video of appData.videos) {
+                        await db.collection('videos').add({
+                            ...video,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+                }
+                
+                // Upload aftercare
+                if (appData.aftercare) {
+                    for (const item of appData.aftercare) {
+                        await db.collection('aftercare').add({
+                            ...item,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+                }
+                
+                showSuccess(`LocalStorage-Daten erfolgreich hochgeladen! 
+                    ${appData.treatments?.length || 0} Behandlungen, 
+                    ${appData.videos?.length || 0} Videos`);
+                    
+            } catch (error) {
+                document.getElementById('statusBox').className = 'status-box error';
+                document.getElementById('statusText').innerHTML = '❌ Upload-Fehler: ' + error.message;
+                console.error('Upload error:', error);
+            }
+        }
+        
+        // ============= SHOW SUCCESS =============
+        function showSuccess(message) {
+            document.getElementById('uploadSection').classList.add('hidden');
+            document.getElementById('successSection').classList.remove('hidden');
+            document.getElementById('uploadResult').innerHTML = message;
+            document.getElementById('statusBox').className = 'status-box success';
+            document.getElementById('statusText').innerHTML = '🎉 ' + message;
+        }
+    </script>
+</body>
+</html>

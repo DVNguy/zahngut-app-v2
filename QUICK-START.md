@@ -1,165 +1,112 @@
-# Quick Start Guide
+# 🚀 Quick Start & Testing Guide
 
-## Get Your App Running in 5 Minutes
+## Your Server is Running!
 
-### Step 1: Test Locally (30 seconds)
-
-```bash
-npm install
-npm start
-```
-
-Open your browser to: **http://localhost:8080**
-
-### Step 2: Deploy to Internet (2 minutes)
-
-#### Option A: Netlify (Easiest)
-1. Go to https://app.netlify.com/drop
-2. Drag and drop your project folder
-3. Done! Your app is live 🎉
-
-#### Option B: Vercel
-```bash
-npm install -g vercel
-vercel
-```
-Follow prompts. Done!
-
-### Step 3: Test on Phone (2 minutes)
-
-1. Open the deployed URL on your phone
-2. In Chrome (Android):
-   - Tap menu → "Install App"
-3. In Safari (iPhone):
-   - Tap Share → "Add to Home Screen"
-
-**That's it! Your patients can now install and use the app.**
+**Access your app at:** http://localhost:8080
 
 ---
 
-## What Your Patients Will Experience
+## 🧪 Quick Testing Checklist
 
-### On First Visit
-1. Visit your app URL
-2. See prompt to install app
-3. Install to home screen (optional)
-4. Browse treatments, videos, and info
+### 1. Open the App
+- Go to: http://localhost:8080
+- Should see loading screen, then home page
+- Turquoise header with logo
 
-### After Installation
-1. App icon on home screen (like any app)
-2. Opens full-screen (no browser UI)
-3. Works offline completely
-4. Fast and smooth experience
+### 2. Test Navigation (Bottom Tabs)
+- Click each tab: Start, Behandlung, Videos, Nachsorge, Termine, **Aktuelles** (NEW!)
+- All sections should load smoothly
 
----
+### 3. Test NEW Refresh Button
+- Look for 🔄 button in top-right of header
+- Click it → Should spin and show "Aktualisiert" toast
 
-## Customization (Optional)
+### 4. Test NEW News Section
+- Click "Aktuelles" tab (📰 icon)
+- Should see 3 news articles
+- Click any article → Opens detail view
+- Click "← Zurück" → Returns to list
 
-### Change Practice Info
-Edit `data.js` - find the `praxis` section:
-```javascript
-"praxis": {
-    "name": "Your Practice Name",
-    "telefon": "Your Phone",
-    "email": "your@email.com",
-    ...
-}
-```
+### 5. Verify Data Loading
+- **Behandlung:** Should show 7 treatment cards
+- **Videos:** Should show 1 video
+- **Nachsorge:** Should show 8 aftercare guides
+- **Termine:** Should show opening hours and contact info
 
-### Change Colors
-Edit `index.html` - find the `:root` section:
-```css
-:root {
-    --primary: #0891b2;  /* Change this */
-    --accent: #06b6d4;   /* And this */
-}
-```
-
-### Add/Edit Treatments
-Edit `data.js` - find the `treatments` array:
-```javascript
-"treatments": [
-    {
-        "name": "Your Treatment",
-        "icon": "🦷",
-        ...
-    }
-]
-```
+### 6. Test Offline Mode
+- Open DevTools (F12) → Network tab
+- Select "Offline" 
+- Reload page → Should still work!
 
 ---
 
-## Updating the App
+## 🎯 Expected Results
 
-1. Make changes to `data.js` or `index.html`
-2. Update version in `sw.js` (line 2):
-   ```javascript
-   const CACHE_NAME = 'zahngut-v1.2.0'; // Bump version
-   ```
-3. Deploy (same as Step 2 above)
-4. Users will get update automatically on next visit
+✅ **Load time:** < 1 second
+✅ **News section:** 3 articles visible
+✅ **Refresh button:** Spins and shows toast
+✅ **All content:** Loaded from Supabase
+✅ **Offline:** Works perfectly
 
 ---
 
-## Need Help?
+## 🔍 Check Browser Console
 
-- **Read full docs**: `README.md`
-- **Deployment guide**: `DEPLOYMENT.md`
-- **What was fixed**: `SUMMARY.md`
-- **Test locally**: `npm start` then open http://localhost:8080
+Press F12 → Console tab
 
----
+**Should see:**
+- ✅ Supabase client initialized
+- ✅ Data service initialized
+- ✅ App initialized
 
-## Checklist Before Going Live
-
-- [ ] Tested app at http://localhost:8080
-- [ ] All practice info is correct in `data.js`
-- [ ] Phone numbers are correct
-- [ ] Email address is correct
-- [ ] Doctolib link works
-- [ ] Emergency number is correct
-- [ ] Tested on your phone
-- [ ] PWA installation works
-- [ ] All videos play
-- [ ] Opening hours are correct
+**Should NOT see:**
+- ❌ Red errors
+- ❌ 404/500 errors
+- ❌ CORS errors
 
 ---
 
-## Common Questions
+## 📱 Test on Mobile
 
-**Q: Do I need a database?**
-A: No! Everything works from static files.
-
-**Q: Will it work offline?**
-A: Yes! After first visit, works completely offline.
-
-**Q: Can I update content easily?**
-A: Yes! Just edit `data.js` and redeploy.
-
-**Q: Does it work on iPhone?**
-A: Yes! Works on all modern browsers.
-
-**Q: Do I need to pay for hosting?**
-A: No! Free hosting on Netlify, Vercel, or GitHub Pages.
-
-**Q: Is it secure?**
-A: Yes! Static files only, HTTPS enforced by hosting.
-
-**Q: Can patients install it like a real app?**
-A: Yes! It's a Progressive Web App (PWA).
+1. Find your computer's IP address
+2. Open phone browser: http://[YOUR_IP]:8080
+3. Test all features
+4. Add to home screen (PWA install)
 
 ---
 
-## Your App is Ready! 🚀
+## 🎨 What to Look For
 
-Everything is configured and working. Just deploy and share with your patients!
+- **Design:** Turquoise color scheme, white cards, clean layout
+- **Animations:** Smooth transitions, spinning refresh button
+- **Performance:** Instant navigation, fast load times
+- **Features:** News section, refresh button, all data from database
 
-**Share URL**: After deploying, you'll get a URL like:
-- `https://your-app.netlify.app`
-- `https://your-app.vercel.app`
-- Or your custom domain
+---
 
-**Tell patients to**:
-1. Visit the URL
-2. Install to home screen
-3. Enjoy the app!
+## 🐛 Quick Troubleshooting
+
+**Problem:** Loading never finishes
+- Check browser console for errors
+- Verify Supabase credentials in .env
+
+**Problem:** News section empty
+- Check browser console
+- Verify articles have is_published = true in database
+
+**Problem:** Styles broken
+- Hard refresh: Ctrl+Shift+R
+
+---
+
+## ✨ Test Database Updates (Live!)
+
+1. Go to https://supabase.com/dashboard
+2. Open Table Editor → news
+3. Add a new article (set is_published = true)
+4. Go back to app, click refresh button
+5. Your new article appears!
+
+---
+
+**That's it! Your hybrid smart caching system is live! 🎉**

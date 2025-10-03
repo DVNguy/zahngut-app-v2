@@ -41,10 +41,11 @@
     "@capacitor/browser": "^5.0.0",
     "@capacitor/device": "^5.0.0",
     "@capacitor/network": "^5.0.0",
+    "@capacitor/preferences": "^5.0.0",
     "@capacitor/push-notifications": "^5.0.0",
     "@capacitor/splash-screen": "^5.0.0",
     "@capacitor/status-bar": "^5.0.0",
-    "@capacitor/preferences": "^5.0.0"
+    "@supabase/supabase-js": "^2.58.0"
   },
   "capacitor": {
     "appId": "de.zahngut.app",
@@ -68,7 +69,11 @@
         "backgroundColor": "#0891b2"
       },
       "PushNotifications": {
-        "presentationOptions": ["badge", "sound", "alert"]
+        "presentationOptions": [
+          "badge",
+          "sound",
+          "alert"
+        ]
       }
     },
     "ios": {

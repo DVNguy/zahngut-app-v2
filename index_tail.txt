@@ -1,0 +1,365 @@
+
+    <!-- App Scripts -->
+    <script src="data.js"></script>
+
+    <script>
+        // App State
+        let appData = null;
+        let currentView = 'home';
+
+        // Navigation
+        function switchTab(tabName) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Show selected section
+            const activeSection = document.getElementById(tabName);
+            if (activeSection) {
+                activeSection.classList.add('active');
+            }
+            
+            // Update nav if main tab
+            const mainTabs = ['home', 'behandlungen', 'videos', 'nachsorge', 'termine'];
+            if (mainTabs.includes(tabName)) {
+                document.querySelectorAll('.nav-item').forEach((item, index) => {
+                    item.classList.remove('active');
+                    if ((tabName === 'home' && index === 0) ||
+                        (tabName === 'behandlungen' && index === 1) ||
+                        (tabName === 'videos' && index === 2) ||
+                        (tabName === 'nachsorge' && index === 3) ||
+                        (tabName === 'termine' && index === 4)) {
+                        item.classList.add('active');
+                    }
+                });
+            }
+            
+            currentView = tabName;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Show Behandlung Detail
+        function showBehandlungDetail(behandlungId) {
+            const behandlung = appData.treatments.find(b => b.id === behandlungId);
+            if (!behandlung) return;
+
+            const content = document.getElementById('behandlungDetailContent');
+            content.innerHTML = `
+                <div class="detail-header">
+                    <div class="detail-icon">${behandlung.icon || '🦷'}</div>
+                    <div class="detail-title">${behandlung.name}</div>
+                    <div class="detail-subtitle">${behandlung.untertitel || ''}</div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>Was ist das?</h3>
+                    <p>${behandlung.was || 'Keine Beschreibung verfügbar'}</p>
+                </div>
+
+                ${behandlung.ablauf ? `
+                    <div class="detail-section">
+                        <h3>Behandlungsablauf</h3>
+                        <ul>
+                            ${behandlung.ablauf.map(item => `<li>${item}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+
+                ${behandlung.vorteile ? `
+                    <div class="detail-section">
+                        <h3>Ihre Vorteile</h3>
+                        <ul>
+                            ${behandlung.vorteile.map(item => `<li>${item}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+
+                <div class="detail-info">
+                    ${behandlung.dauer ? `
+                        <div class="detail-info-item">
+                            <div class="detail-info-label">Dauer</div>
+                            <div class="detail-info-value">${behandlung.dauer}</div>
+                        </div>
+                    ` : ''}
+                    ${behandlung.empfohlen ? `
+                        <div class="detail-info-item">
+                            <div class="detail-info-label">Empfohlen</div>
+                            <div class="detail-info-value">${behandlung.empfohlen}</div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            switchTab('behandlungDetail');
+        }
+
+        // Toggle Nachsorge
+        function toggleNachsorge(element) {
+            element.classList.toggle('expanded');
+        }
+
+
+        // Load Data
+        async function loadAppData() {
+            try {
+                let data = null;
+
+                // Try localStorage first
+                const stored = localStorage.getItem('zahngutAppData');
+                if (stored) {
+                    data = JSON.parse(stored);
+                    console.log('✅ Data loaded from localStorage');
+                } else if (typeof ZahngutData !== 'undefined' && ZahngutData.defaultData) {
+                    // Use default data
+                    data = ZahngutData.defaultData;
+                    console.log('✅ Default data loaded');
+                    // Save to localStorage for offline use
+                    localStorage.setItem('zahngutAppData', JSON.stringify(data));
+                }
+
+                if (data) {
+                    appData = data;
+                    renderApp();
+                } else {
+                    console.error('No data available');
+                    showError();
+                }
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showError();
+            }
+        }
+
+        // Render App
+        function renderApp() {
+            if (!appData) return;
+
+            // Update header
+            if (appData.praxis) {
+                document.querySelector('.praxis-name').textContent = appData.praxis.name || 'Zahngut Bad Wünnenberg';
+                document.querySelector('.hero h1').textContent = 'Willkommen bei ' + (appData.praxis.name || 'Zahngut');
+                document.querySelector('.hero-slogan').textContent = appData.praxis.slogan || '';
+            }
+
+            // Render Behandlungen
+            renderBehandlungen();
+
+            // Render Videos
+            renderVideos();
+
+            // Render Nachsorge
+            renderNachsorge();
+
+            // Render Opening Hours
+            renderOpeningHours();
+
+            // Render Contact Info
+            renderContactInfo();
+
+            // Render Emergency Info
+            renderEmergencyInfo();
+        }
+
+        // Render Behandlungen
+        function renderBehandlungen() {
+            const grid = document.getElementById('behandlungenGrid');
+            if (!appData.treatments || appData.treatments.length === 0) {
+                grid.innerHTML = '<p>Keine Behandlungen verfügbar</p>';
+                return;
+            }
+
+            grid.innerHTML = appData.treatments
+                .filter(b => b.active !== false)
+                .map(behandlung => `
+                    <div class="behandlung-card" onclick="showBehandlungDetail('${behandlung.id}')">
+                        <div class="behandlung-icon">${behandlung.icon || '🦷'}</div>
+                        <div class="behandlung-name">${behandlung.name}</div>
+                    </div>
+                `).join('');
+        }
+
+        // Render Videos
+        function renderVideos() {
+            const container = document.getElementById('videosList');
+            if (!appData.videos || appData.videos.length === 0) {
+                container.innerHTML = '<p>Keine Videos verfügbar</p>';
+                return;
+            }
+
+            container.innerHTML = appData.videos
+                .filter(v => v.active !== false)
+                .map(video => `
+                    <div class="video-card" onclick="window.open('${video.url}', '_blank')">
+                        <div class="video-title">${video.title}</div>
+                        <div class="video-info">
+                            <span>⏱ ${video.duration || 'N/A'}</span>
+                            <span>👁 ${video.views || '0'} Aufrufe</span>
+                        </div>
+                    </div>
+                `).join('');
+        }
+
+        // Render Nachsorge
+        function renderNachsorge() {
+            const container = document.getElementById('nachsorgeList');
+            if (!appData.aftercare || appData.aftercare.length === 0) {
+                container.innerHTML = '<p>Keine Nachsorge-Tipps verfügbar</p>';
+                return;
+            }
+
+            container.innerHTML = appData.aftercare
+                .filter(n => n.active !== false)
+                .map(item => `
+                    <div class="nachsorge-card" onclick="toggleNachsorge(this)">
+                        <div class="nachsorge-header">
+                            <div class="nachsorge-icon">${item.icon || '🦷'}</div>
+                            <div class="nachsorge-info">
+                                <h3>${item.behandlung}</h3>
+                                <p>${item.kurzbeschreibung}</p>
+                            </div>
+                        </div>
+                        <div class="nachsorge-content">
+                            <div class="timeline">
+                                ${Object.values(item.phasen || {}).map(phase => `
+                                    <div class="timeline-item">
+                                        <h4>${phase.title} (${phase.time})</h4>
+                                        <ul>
+                                            ${phase.items.map(i => `<li>${i}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            ${item.warnung ? `
+                                <div class="warning-box">
+                                    <strong>⚠️ Sofort melden bei:</strong> ${item.warnung}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+        }
+
+        // Render Opening Hours
+        function renderOpeningHours() {
+            const container = document.getElementById('openingHours');
+            if (!appData.oeffnungszeiten) {
+                container.innerHTML = '<p>Öffnungszeiten nicht verfügbar</p>';
+                return;
+            }
+
+            const days = ['montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag', 'sonntag'];
+            const dayNames = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+
+            container.innerHTML = days.map((day, index) => {
+                const hours = appData.oeffnungszeiten[day];
+                const timeText = hours && hours.von && hours.bis 
+                    ? `${hours.von} - ${hours.bis} Uhr`
+                    : 'Geschlossen';
+                
+                return `
+                    <div class="hours-row">
+                        <div class="day">${dayNames[index]}</div>
+                        <div class="time">${timeText}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Render Contact Info
+        function renderContactInfo() {
+            if (appData.praxis) {
+                document.getElementById('phoneNumber').textContent = appData.praxis.telefon || '02957/1010';
+                document.getElementById('emailAddress').textContent = appData.praxis.email || 'info@dein-zahngut.de';
+                
+                const address = appData.praxis.address || appData.praxis;
+                document.getElementById('praxisAddress').innerHTML = `
+                    ${address.street || 'Hauptstraße 1'}<br>
+                    ${address.zip || '33181'} ${address.city || 'Bad Wünnenberg'}
+                `;
+
+                if (appData.praxis.doctolib) {
+                    document.getElementById('doctolibLink').href = appData.praxis.doctolib;
+                }
+            }
+        }
+
+        // Render Emergency Info
+        function renderEmergencyInfo() {
+            if (appData.emergency) {
+                document.getElementById('emergencyNumber').textContent = appData.emergency.nummer || '01805 / 986 700';
+                
+                if (appData.emergency.anweisungen) {
+                    document.getElementById('emergencyInstructions').innerHTML = 
+                        appData.emergency.anweisungen.map(a => `<li>${a}</li>`).join('');
+                }
+
+                if (appData.emergency.zahnAus) {
+                    document.getElementById('toothOutInstructions').textContent = appData.emergency.zahnAus;
+                }
+
+                if (appData.emergency.zahnLocker) {
+                    document.getElementById('toothLooseInstructions').textContent = appData.emergency.zahnLocker;
+                }
+            }
+        }
+
+        // Show Error
+        function showError() {
+            const mainContent = document.getElementById('mainContent');
+            mainContent.innerHTML = `
+                <div style="padding: 40px; text-align: center;">
+                    <h2 style="color: var(--error);">Fehler beim Laden</h2>
+                    <p style="margin-top: 20px; color: var(--text-light);">
+                        Die App-Daten konnten nicht geladen werden.<br>
+                        Bitte prüfen Sie Ihre Internetverbindung.
+                    </p>
+                    <button onclick="location.reload()" style="
+                        margin-top: 30px;
+                        padding: 12px 24px;
+                        background: var(--primary);
+                        color: white;
+                        border: none;
+                        border-radius: 8px;
+                        font-size: 16px;
+                        cursor: pointer;
+                    ">Neu laden</button>
+                </div>
+            `;
+        }
+
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker registered'))
+                    .catch(err => console.log('Service Worker registration failed:', err));
+            });
+        }
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 Initializing Zahngut App...');
+
+            // Load data
+            await loadAppData();
+
+            // Hide loading screen
+            setTimeout(() => {
+                document.getElementById('loadingScreen').classList.add('hide');
+            }, 1000);
+        });
+
+        // Prevent double-tap zoom on iOS
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    </script>
+</body>
+</html>

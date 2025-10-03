@@ -501,171 +501,6 @@
             line-height: 1.8;
         }
 
-        /* Refresh Button */
-        .refresh-btn {
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
-            padding: 8px 12px;
-            border-radius: 20px;
-            color: var(--white);
-            font-size: 18px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: none;
-            margin-right: 10px;
-        }
-
-        .refresh-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-
-        .refresh-btn.spinning {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        /* Section Header */
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding: 0 20px;
-        }
-
-        .last-update {
-            font-size: 12px;
-            color: var(--text-light);
-        }
-
-        /* News Section */
-        .news-list {
-            padding: 0 20px 20px;
-        }
-
-        .news-card {
-            background: var(--white);
-            border-radius: 16px;
-            margin-bottom: 15px;
-            overflow: hidden;
-            box-shadow: 0 2px 15px rgba(8,145,178,0.08);
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .news-card:active {
-            transform: scale(0.98);
-        }
-
-        .news-card.featured {
-            border: 2px solid var(--primary);
-        }
-
-        .news-image {
-            width: 100%;
-            height: 180px;
-            overflow: hidden;
-        }
-
-        .news-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .news-content {
-            padding: 20px;
-            position: relative;
-        }
-
-        .news-badge {
-            display: inline-block;
-            background: var(--primary);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-        }
-
-        .news-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-dark);
-            margin-bottom: 10px;
-            line-height: 1.4;
-        }
-
-        .news-excerpt {
-            font-size: 14px;
-            color: var(--text-light);
-            line-height: 1.6;
-            margin-bottom: 15px;
-        }
-
-        .news-meta {
-            display: flex;
-            gap: 8px;
-            font-size: 12px;
-            color: var(--text-light);
-        }
-
-        .news-empty {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-light);
-        }
-
-        .news-detail-image {
-            margin-bottom: 20px;
-        }
-
-        .news-detail-image img {
-            width: 100%;
-            border-radius: 16px;
-        }
-
-        /* Toast Notifications */
-        .toast {
-            position: fixed;
-            bottom: 90px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: var(--text-dark);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 24px;
-            font-size: 14px;
-            font-weight: 600;
-            opacity: 0;
-            transition: all 0.3s ease;
-            z-index: 1000;
-        }
-
-        .toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        .toast-success {
-            background: var(--success);
-        }
-
-        .toast-error {
-            background: var(--error);
-        }
-
         /* Bottom Navigation */
         .bottom-nav {
             position: fixed;
@@ -839,14 +674,9 @@
                 <span class="logo-icon">🦷</span>
                 <span class="praxis-name">Zahngut Bad Wünnenberg</span>
             </div>
-            <div class="header-right">
-                <button id="refreshBtn" onclick="refreshData()" class="refresh-btn" title="Aktualisieren">
-                    🔄
-                </button>
-                <a href="tel:01805986700" class="emergency-btn">
-                    📞 Notfall
-                </a>
-            </div>
+            <a href="tel:01805986700" class="emergency-btn">
+                📞 Notfall
+            </a>
         </div>
     </div>
 
@@ -965,27 +795,6 @@
             </a>
         </div>
 
-        <!-- Aktuelles (News) Section -->
-        <div id="aktuelles" class="content-section">
-            <div class="section-header">
-                <h2 class="section-title">Aktuelles</h2>
-                <span id="lastUpdateTime" class="last-update">Laden...</span>
-            </div>
-            <div id="newsList" class="news-list">
-                <!-- News articles will be inserted here by JavaScript -->
-            </div>
-        </div>
-
-        <!-- News Detail View -->
-        <div id="newsDetail" class="content-section">
-            <div class="back-button" onclick="switchTab('aktuelles')">
-                ← Zurück
-            </div>
-            <div id="newsDetailContent">
-                <!-- News detail content will be inserted here -->
-            </div>
-        </div>
-
         <!-- Notfall Section -->
         <div id="notfall" class="content-section">
             <div class="emergency-card">
@@ -1038,28 +847,4 @@
             <div class="nav-item-icon">📅</div>
             <div class="nav-item-label">Termine</div>
         </div>
-        <div class="nav-item" data-tab="aktuelles" onclick="switchTab('aktuelles')">
-            <div class="nav-item-icon">📰</div>
-            <div class="nav-item-label">Aktuelles</div>
-        </div>
     </div>
-
-    <!-- App Scripts - New Module-based Architecture -->
-    <script type="module" src="./supabase-client.js"></script>
-    <script type="module" src="./data-service.js"></script>
-    <script type="module" src="./app.js"></script>
-
-    <!-- Note: All app logic is now in app.js module -->
-    <script>
-        // Prevent double-tap zoom on iOS (keep this inline for immediate execution)
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', function(event) {
-            const now = (new Date()).getTime();
-            if (now - lastTouchEnd <= 300) {
-                event.preventDefault();
-            }
-            lastTouchEnd = now;
-        }, false);
-    </script>
-</body>
-</html>

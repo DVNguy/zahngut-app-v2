@@ -107,28 +107,6 @@
         }
 
         /* Firebase Status */
-        .firebase-status {
-            position: fixed;
-            bottom: 80px;
-            right: 10px;
-            background: rgba(16, 185, 129, 0.9);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            z-index: 100;
-            display: none;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .firebase-status.show {
-            display: flex;
-        }
-
-        .firebase-status.offline {
-            background: rgba(239, 68, 68, 0.9);
-        }
 
         /* Header */
         .header {
@@ -688,10 +666,6 @@
         <div class="loading-spinner"></div>
     </div>
 
-    <!-- Firebase Status -->
-    <div class="firebase-status" id="firebaseStatus">
-        <span id="firebaseStatusText">Offline</span>
-    </div>
 
     <!-- Header -->
     <div class="header">
@@ -875,16 +849,7 @@
         </div>
     </div>
 
-    <!-- Firebase Scripts -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    
     <!-- App Scripts -->
-    <script src="firebase-config.js"></script>
-    <script src="firebase-service.js"></script>
     <script src="data.js"></script>
 
     <script>
@@ -984,69 +949,25 @@
             element.classList.toggle('expanded');
         }
 
-        // Firebase Connection Monitor
-        function setupFirebaseMonitoring() {
-            if (typeof firebase !== 'undefined' && firebase.database) {
-                const connectedRef = firebase.database().ref('.info/connected');
-                connectedRef.on('value', (snap) => {
-                    const status = document.getElementById('firebaseStatus');
-                    const statusText = document.getElementById('firebaseStatusText');
-                    
-                    if (snap.val() === true) {
-                        status.classList.remove('offline');
-                        statusText.textContent = '🟢 Online';
-                        status.classList.add('show');
-                        
-                        // Hide after 3 seconds
-                        setTimeout(() => {
-                            status.classList.remove('show');
-                        }, 3000);
-                    } else {
-                        status.classList.add('offline');
-                        statusText.textContent = '🔴 Offline';
-                        status.classList.add('show');
-                    }
-                });
-            }
-        }
 
         // Load Data
         async function loadAppData() {
             try {
                 let data = null;
-                
-                // Try Firebase first
-                if (typeof FirebaseService !== 'undefined') {
-                    console.log('Attempting to load from Firebase...');
-                    try {
-                        data = await FirebaseService.getAllAppData();
-                        if (data && data.praxis) {
-                            console.log('✅ Data loaded from Firebase');
-                        }
-                    } catch (firebaseError) {
-                        console.warn('Firebase load failed:', firebaseError);
-                    }
+
+                // Try localStorage first
+                const stored = localStorage.getItem('zahngutAppData');
+                if (stored) {
+                    data = JSON.parse(stored);
+                    console.log('✅ Data loaded from localStorage');
+                } else if (typeof ZahngutData !== 'undefined' && ZahngutData.defaultData) {
+                    // Use default data
+                    data = ZahngutData.defaultData;
+                    console.log('✅ Default data loaded');
+                    // Save to localStorage for offline use
+                    localStorage.setItem('zahngutAppData', JSON.stringify(data));
                 }
-                
-                // Fallback to localStorage
-                if (!data || !data.praxis) {
-                    console.log('Attempting to load from localStorage...');
-                    const stored = localStorage.getItem('zahngutAppData');
-                    if (stored) {
-                        data = JSON.parse(stored);
-                        console.log('✅ Data loaded from localStorage');
-                    }
-                }
-                
-                // Fallback to default data
-                if (!data || !data.praxis) {
-                    console.log('Loading default data...');
-                    if (typeof ZahngutData !== 'undefined' && ZahngutData.defaultData) {
-                        data = ZahngutData.defaultData;
-                        console.log('✅ Default data loaded');
-                    }
-                }
-                
+
                 if (data) {
                     appData = data;
                     renderApp();
@@ -1054,7 +975,7 @@
                     console.error('No data available');
                     showError();
                 }
-                
+
             } catch (error) {
                 console.error('Error loading data:', error);
                 showError();
@@ -1270,13 +1191,10 @@
         // Initialize App
         window.addEventListener('DOMContentLoaded', async function() {
             console.log('🚀 Initializing Zahngut App...');
-            
-            // Setup Firebase monitoring
-            setupFirebaseMonitoring();
-            
+
             // Load data
             await loadAppData();
-            
+
             // Hide loading screen
             setTimeout(() => {
                 document.getElementById('loadingScreen').classList.add('hide');

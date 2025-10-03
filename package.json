@@ -44,7 +44,7 @@
     "@capacitor/push-notifications": "^5.0.0",
     "@capacitor/splash-screen": "^5.0.0",
     "@capacitor/status-bar": "^5.0.0",
-    "@capacitor/storage": "^1.2.5"
+    "@capacitor/preferences": "^5.0.0"
   },
   "capacitor": {
     "appId": "de.zahngut.app",
